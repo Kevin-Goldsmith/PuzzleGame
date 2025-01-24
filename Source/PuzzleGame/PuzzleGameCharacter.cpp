@@ -44,12 +44,23 @@ void APuzzleGameCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	if (II_InteractionSystem* interact = Cast<II_InteractionSystem>(InteractorComp))
+	{
+		II_InteractionSystem::Execute_BeginInteractionTimer(InteractorComp);
+	}
+
+	SpawnAndAttMasterCube();
+
+	InteractorComp->m_Outline = m_Overlay;
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
 
 void APuzzleGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {	
+	inputComp = PlayerInputComponent;
+
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
@@ -64,13 +75,14 @@ void APuzzleGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APuzzleGameCharacter::Look);
 
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APuzzleGameCharacter::Interact);
+
+		EnhancedInputComponent->BindAction(RTS_ToggleAction, ETriggerEvent::Started, this, &APuzzleGameCharacter::RTS_Toggle);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
-
 
 void APuzzleGameCharacter::Move(const FInputActionValue& Value)
 {
@@ -100,5 +112,63 @@ void APuzzleGameCharacter::Look(const FInputActionValue& Value)
 
 void APuzzleGameCharacter::Interact(const FInputActionValue& Value)
 {
+	AActor* hitAct = InteractorComp->hitActor;
+	
+	if(IsValid(hitAct))
+	{
+		if (II_InteractionSystem* interact = Cast<II_InteractionSystem>(hitAct))
+		{
+			II_InteractionSystem::Execute_InteractWithObject(hitAct);	
+		}
+	}
+}
 
+void APuzzleGameCharacter::RTS_Toggle(const FInputActionValue& Value)
+{
+	if (!IsValid(RTS_Master_Ref))
+	{
+		return;
+	}
+
+	isRTS = RTS_Master_Ref->IsHidden();
+
+	if (II_Cubes* cube = Cast<II_Cubes>(RTS_Master_Ref))
+	{
+		II_Cubes::Execute_ToggleVisibility(RTS_Master_Ref, isRTS);
+	}
+	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Emerald, FString::Printf(TEXT("%s"), isRTS ? TEXT("true") : TEXT("false")));
+
+	if (inputComp)
+	{
+		if (UEnhancedInputComponent* tempComp = Cast<UEnhancedInputComponent>(inputComp))
+		{
+			oldMap = newMap;
+			newMap = isRTS ? IMC_RTS : IMC_locomotion;
+			
+			if (APlayerController* playerCont = Cast<APlayerController>(GetController()))
+			{
+				if (UEnhancedInputLocalPlayerSubsystem* subsystem =
+					ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(playerCont->GetLocalPlayer()))
+				{
+					subsystem->AddMappingContext(newMap, 0);
+				
+					if (oldMap)
+					{
+						subsystem->RemoveMappingContext(oldMap);
+					}
+				}
+			}
+		}
+	}
+
+
+	if (isRTS)
+	{
+		RTS_Master_Ref->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	}
+	else
+	{
+		RTS_Master_Ref->AttachToActor(this, FAttachmentTransformRules::SnapToTargetIncludingScale);
+		RTS_Master_Ref->SetActorRelativeLocation(FVector(150, 0, 0));
+	}
 }

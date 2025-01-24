@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include <Components/BoxComponent.h>
+#include <Components/TextRenderComponent.h>
 #include <PuzzleGame/Data/RPS_States.h>
+#include "PuzzleGame/Framework/Interfaces/I_Cubes.h"
+#include "PuzzleGame/Framework/Interfaces/I_States.h"
 #include "PuzzleGame/Framework/Interfaces/I_InteractionSystem.h"
 #include "RPS_Cube.generated.h"
 
@@ -17,7 +20,7 @@ class UStaticMeshComponent;
 
 
 UCLASS(Abstract)
-class PUZZLEGAME_API ARPS_Cube : public AActor, public II_InteractionSystem
+class PUZZLEGAME_API ARPS_Cube : public AActor, public II_InteractionSystem, public II_States
 {
 	GENERATED_BODY()
 	
@@ -41,23 +44,27 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite)
 	UBoxComponent* _Box;
 
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	UTextRenderComponent* _Name;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 
+	void UpdateNames();
+
+
 	// Interface Events //
 
-//	virtual void GetState(ERPS_States &curState) override;
-
 	ERPS_States GetState_Implementation() override;
-
-//	virtual void SetState(ERPS_States curState) override;
 
 	void SetState_Implementation(ERPS_States curState) override;
 
 	void HighlightObject_Implementation() override;
 	
 	void RemoveHighlight_Implementation() override;
+
+	void InteractWithObject_Implementation() override;
 
 };

@@ -5,12 +5,11 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include <PuzzleGame/Data/RPS_States.h>
-#include "I_InteractionSystem.generated.h"
-
+#include "I_Cubes.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI, Blueprintable)
-class UI_InteractionSystem : public UInterface
+UINTERFACE(MinimalAPI)
+class UI_Cubes : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -18,7 +17,7 @@ class UI_InteractionSystem : public UInterface
 /**
  * 
  */
-class PUZZLEGAME_API II_InteractionSystem
+class PUZZLEGAME_API II_Cubes
 {
 	GENERATED_BODY()
 
@@ -26,18 +25,23 @@ class PUZZLEGAME_API II_InteractionSystem
 public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void BeginInteractionTimer();
+	void PressedButton(ERPS_States state);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void StopInteractionTimer();
-
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void HighlightObject();
+	void ToggleVisibility(bool val);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void RemoveHighlight();
+	void AddElementToUI(ERPS_States state);
+	
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void InteractWithObject();
+	void UpdateCounterVal(int val);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void UpdateMaxMatches(int val);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void UpdateMod(int val);
+
+
 };

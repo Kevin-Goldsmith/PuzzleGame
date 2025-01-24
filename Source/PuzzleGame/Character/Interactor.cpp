@@ -2,6 +2,7 @@
 
 
 #include "Interactor.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values for this component's properties
 UInteractor::UInteractor()
@@ -35,48 +36,59 @@ void UInteractor::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 void UInteractor::BeginTrace()
 {
-
-	UCameraComponent* camComp;
-	camComp = GetOwner()->GetComponentByClass<UCameraComponent>();
-
+	FRotator startRot;
 	FVector startTrace;
-	startTrace = camComp->GetComponentLocation();
+	GetOwner()->GetActorEyesViewPoint(startTrace, startRot);
 
 	FVector endTrace;
-	endTrace = camComp->GetForwardVector() * 1000.f;
-
+	endTrace = startTrace + (UKismetMathLibrary::GetForwardVector(startRot) * 1000.f);
+	
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
-
+	Params.bTraceComplex;
 	
 
 	GetWorld()->LineTraceSingleByChannel(hitRes, 
 											startTrace, 
 											endTrace, 
-											ECollisionChannel::ECC_Camera,
+											ECollisionChannel::ECC_Visibility,
 											Params,
 											FCollisionResponseParams::DefaultResponseParam);
 
+	//DrawDebugLine(GetWorld(), startTrace, endTrace, FColor::Red, false, 2, 0, 2);
 	if (hitRes.bBlockingHit)
 	{
-		hitActor = hitRes.GetActor();
-
-		if (II_InteractionSystem* Interact = Cast<II_InteractionSystem>(hitActor))
+		if (hitActor != hitRes.GetActor())
 		{
-			II_InteractionSystem::Execute_HighlightObject(hitActor);
+			if (hitActor)
+			{
+				if (II_InteractionSystem* Interact = Cast<II_InteractionSystem>(hitActor))
+				{
+					II_InteractionSystem::Execute_RemoveHighlight(hitActor);
+					hitActor = nullptr;
+				}
+			}
+
+			hitActor = hitRes.GetActor();
+
+			if (II_InteractionSystem* Interact = Cast<II_InteractionSystem>(hitActor))
+			{
+				II_InteractionSystem::Execute_HighlightObject(hitActor);
+				hitActor->GetComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(m_Outline);
+			}
 		}
 	}
 	else
 	{
-		if (II_InteractionSystem* Interact = Cast<II_InteractionSystem>(hitRes.GetActor()))
+		if (hitActor)
 		{
-			II_InteractionSystem::Execute_RemoveHighlight(hitActor);
-			hitActor = nullptr;
+			if (II_InteractionSystem* Interact = Cast<II_InteractionSystem>(hitActor))
+			{
+				II_InteractionSystem::Execute_RemoveHighlight(hitActor);
+				hitActor = nullptr;
+			}
 		}
-		
 	}
-
-
 }
 
 void UInteractor::BeginInteractionTimer_Implementation()

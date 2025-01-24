@@ -17,6 +17,10 @@ class PUZZLEGAME_API UInteractor : public UActorComponent, public II_Interaction
 public:	
 	// Sets default values for this component's properties
 	UInteractor();
+	AActor* hitActor;
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	UMaterialInstance* m_Outline;
 
 protected:
 	// Called when the game starts
@@ -26,7 +30,9 @@ protected:
 
 	FHitResult hitRes;
 
-	AActor* hitActor;
+	
+
+	
 
 public:	
 	// Called every frame
